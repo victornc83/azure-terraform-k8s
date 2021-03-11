@@ -1,0 +1,4 @@
+---
+pod_network_cidr: 192.169.0.0/16
+helm_install: true
+helm_version: v3.5.0

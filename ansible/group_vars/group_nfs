@@ -1,0 +1,4 @@
+---
+nfs_disks:
+  - /dev/sdc 
+nfs_path: /data

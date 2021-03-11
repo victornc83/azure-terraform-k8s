@@ -1,0 +1,52 @@
+---
+- name: Creando namespace
+  k8s:
+    name: appns
+    kind: Namespace
+    state: present
+
+- name: Creación de PV
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: nfs-data-pv
+        namespace: appns
+      spec:
+        capacity:
+          storage: 10Gi
+        volumeMode: Filesystem
+        accessModes:
+          - ReadWriteMany
+        persistentVolumeReclaimPolicy: Recycle
+        storageClassName: nfs
+        mountOptions:
+          - hard
+          - nfsvers=4.1
+        nfs:
+          path: /data
+          server: "{{ hostvars[groups['group_nfs'][0]].private_ipv4_addresses[0] }}"
+
+- name: Creación PVC 
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: nfs-data-pvc
+        namespace: appns
+      spec:
+        storageClassName: nfs
+        accessModes:
+          - ReadWriteMany
+        resources:
+          requests:
+            storage: 2Gi
+
+- name: Creo deployment
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'app.yaml') }}"

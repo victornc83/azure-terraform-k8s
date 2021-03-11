@@ -1,0 +1,18 @@
+galaxy_info:
+  author: Victor Nieto
+  description: Rol para configurar un servidor y client NFS en CentOS 7/8
+  company: Caso Practico 2 - DevOps & Cloud UNIR
+
+  license: license (GPL-2.0-or-later, MIT, etc)
+
+  min_ansible_version: 2.9
+
+  platforms:
+  - name: CentOS
+    versions:
+    - 7
+    - 8
+
+  galaxy_tags: []
+
+dependencies: []

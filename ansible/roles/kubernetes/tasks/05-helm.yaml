@@ -1,0 +1,36 @@
+---
+- name: Checking Helm binary
+  stat:
+    path: /usr/local/bin/helm
+  register: helm_path
+
+- name: Checking Helm version
+  block:
+  - command: /usr/local/bin/helm version
+    register: helm_output
+  - set_fact:
+      helm_current_version: "{{ helm_output.stdout | regex_search('v[0-9]+.[0-9]+.[0-9]') }}"
+  when: helm_path.stat.exists
+
+- name: Installing Helm
+  block:
+  - get_url:
+      url: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
+      dest: /tmp/helm.tar.gz 
+  - unarchive:
+      remote_src: yes
+      src: /tmp/helm.tar.gz
+      dest: /tmp/
+  - copy:
+      remote_src: yes
+      src: /tmp/linux-amd64/helm
+      dest: /usr/local/bin/helm
+      mode: 0755
+    become: true
+  - file:
+      state: absent
+      path: "{{ item }}"
+    loop:
+    - /tmp/helm.tar.gz
+    - /tmp/linux-amd64
+  when: not helm_path.stat.exists or helm_current_version != helm_version

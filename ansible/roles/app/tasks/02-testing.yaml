@@ -1,0 +1,16 @@
+---
+- name: Obteniendo NodePort del servicio
+  command: kubectl get svc haproxy-ingress -n haproxy-controller -o=jsonpath='{.spec.ports[?(@.port==80)].nodePort}'
+  register: nodeport
+- name: Chequeando la aplicación
+  uri:
+    url: "http://{{ ansible_host }}:{{ nodeport.stdout }}/app"
+    validate_certs: no
+    return_content: yes
+    status_code: 200
+    headers:
+      Host: cp2-app.bar
+  register: result_private
+  until: result_private is not failed
+  loop: "{{ lookup('inventory_hostnames', 'group_master:group_worker', wantlist=True) }}"
+  delegate_to: localhost

@@ -1,0 +1,14 @@
+---
+ports:
+  - 6443/tcp
+  - 2379-2380/tcp
+  - 8285/udp
+  - 8472/udp
+  - 10250-10252/tcp
+  - 10255/tcp
+  - 30000-32767/tcp
+
+k8s_version: 1.19.7
+pod_network_cidr: 192.169.0.0/16
+helm_install: true
+helm_version: v3.5.0

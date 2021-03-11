@@ -1,0 +1,67 @@
+---
+- name: SELinux en modo permisivo
+  selinux:
+    policy: targeted
+    state: permissive
+- name: Configuro SELinux para compartir ficheros por nfs
+  seboolean:
+    name: "{{ item }}"
+    state: yes
+    persistent: yes
+  loop: 
+    - nfs_export_all_ro
+    - nfs_export_all_rw
+- block:
+  - name: Habiltando firewalld
+    systemd:
+      name: firewalld
+      state: started
+      enabled: yes
+  - name: Configurando firewalld
+    firewalld:
+      service: "{{ item }}"
+      permanent: yes
+      immediate: yes
+      state: enabled
+    loop:
+    - nfs
+    - rpc-bind
+    - mountd
+  when: firewalld_enabled
+- name: Creamos directorio a compartir
+  file: 
+    path: "{{ nfs_path }}"
+    state: directory
+    mode: '0777'
+- name: Creando VG datos
+  lvg: 
+    vg: vgdatos
+    pvs: "{{ nfs_disks | join(' ') }}"
+- name: Creando LVol datos
+  lvol:
+    lv: lvdatos
+    vg: vgdatos
+    size: 100%VG
+- name: Formateando 
+  filesystem:
+    fstype: ext4
+    dev: /dev/mapper/vgdatos-lvdatos
+- name: Obteniendo UUID
+  command: blkid -s UUID -o value /dev/mapper/vgdatos-lvdatos
+  register: disk_output
+- name: Montando directorio a compartir
+  mount:
+    path: "{{ nfs_path }}"
+    src: "UUID={{ disk_output.stdout }}"
+    fstype: ext4
+    state: mounted
+- name: Compartiendo directorio de datos
+  lineinfile:
+    path: /etc/exports
+    line: "{{ nfs_path }} *(rw,sync,no_root_squash)"
+  notify: Reiniciar nfs server
+- name: Habilitando servicio nfs
+  systemd: 
+    name: nfs-server
+    state: started
+    enabled: yes

@@ -1,0 +1,7 @@
+[group_master]
+master
+[group_worker]
+nodo1
+nodo2
+[group_nfs]
+nfs1

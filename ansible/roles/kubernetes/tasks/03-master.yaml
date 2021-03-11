@@ -1,0 +1,47 @@
+---
+- name: Comprobando si existe cluster
+  command: "kubeadm config view"
+  register: cluster
+  become: true
+  ignore_errors: yes
+
+- name: Instalando modulos que seran necesarios más adelante
+  pip:
+    name: openshift >= 0.6
+  become: true
+
+- name: Creando cluster con kubeadm
+  block:
+    - name: Ejecutando kubeadm init
+      command: "kubeadm init --pod-network-cidr {{ pod_network_cidr }}"
+  rescue:
+    - name: Ocurrio un error durante la creación del cluster
+      command: "{{ item }}"
+      loop: 
+        - yes | kubeadm reset
+        - iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+        - ipvsadm -C
+  when: cluster.rc != 0
+  become: true
+
+- name: Creando configuración del usuario devops
+  file:
+    path: /home/devops/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+  become: true
+
+- name: Copiando fichero de configuración
+  copy:
+    remote_src: yes
+    src: /etc/kubernetes/admin.conf 
+    dest: /home/devops/.kube/config
+    owner: "{{ ansible_user }}"
+    mode: 0600
+  become: true
+
+- name: Instalando driver de red
+  command: "kubectl apply -f https://docs.projectcalico.org/manifests/canal.yaml"
+
+- name: Instalando ingress controller
+  command: "kubectl apply -f https://raw.githubusercontent.com/haproxytech/kubernetes-ingress/v1.5/deploy/haproxy-ingress.yaml"

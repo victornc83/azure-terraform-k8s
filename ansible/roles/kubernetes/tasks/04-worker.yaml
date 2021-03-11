@@ -1,0 +1,17 @@
+---
+- name: Comprobando si el nodo ya forma parte del nodo
+  command: kubectl get nodes --output=jsonpath={.items..metadata.name}
+  register: listanodos
+  delegate_to: "{{ groups['group_master'][0] }}"
+
+- name: Añadiendo nodo al cluster
+  block: 
+    - name: Obteniendo token
+      command: kubeadm token create --print-join-command --skip-headers --skip-log-headers
+      register: joincommand
+      delegate_to: "{{ groups['group_master'][0] }}"
+    - name: Añadiendo nodo
+      command: "{{ joincommand.stdout }}"
+      become: true
+  when: hostvars[inventory_hostname].name not in listanodos.stdout
+  

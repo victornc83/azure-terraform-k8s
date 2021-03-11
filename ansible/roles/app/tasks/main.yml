@@ -1,0 +1,4 @@
+---
+# tasks file for app
+- include_tasks: 01-resources.yaml
+- include_tasks: 02-testing.yaml

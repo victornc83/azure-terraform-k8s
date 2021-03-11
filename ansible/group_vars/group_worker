@@ -1,0 +1,11 @@
+---
+ports:
+  - 8285/udp
+  - 8472/udp
+  - 10250/tcp
+  - 30000-32767/tcp
+
+config_kubernetes: true
+helm_install: true
+helm_version: v3.5.0
+k8s_version: 1.19.7

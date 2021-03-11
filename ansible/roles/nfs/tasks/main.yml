@@ -1,0 +1,5 @@
+---
+# tasks file for nfs
+- include_tasks: 01-install.yaml
+- include_tasks: 02-config-server.yaml
+  when: "'group_nfs' in group_names"

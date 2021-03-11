@@ -1,0 +1,82 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deploy
+  namespace: appns
+  labels:
+    app: app-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-deploy
+  template:
+    metadata:
+      labels:
+        app: app-deploy
+    spec:
+      containers:
+      - name: app
+        image: docker.io/alexwhen/docker-2048:latest
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80 
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+        volumeMounts:
+        - name: site-pvc
+          mountPath: /var/www/public
+      volumes:
+      - name: site-pvc
+        persistentVolumeClaim:
+          claimName: nfs-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: app-service
+    namespace: appns
+spec:
+    selector:
+      app: app-deploy
+    ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: appns
+  labels:
+    app: app-deploy
+  annotations:
+      haproxy.org/path-rewrite: "/"
+spec:
+  rules:
+  - host: cp2-app.bar
+    http:
+      paths:
+      - path: /app
+        pathType: "Prefix"
+        backend:
+          service:
+            name: app-service
+            port:
+              number: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-configmap
+  namespace: appns
+data:
+  servers-increment: "42"
+  ssl-redirect: "OFF"

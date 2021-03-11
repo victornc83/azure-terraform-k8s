@@ -1,0 +1,59 @@
+---
+- name: Poner SELinux in permissive mode
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: Añadir modulo brnetfilter
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Aplicando configuración sysctl
+  sysctl:
+    name: "{{ item }}"
+    state: present
+    value: "1"
+  loop:
+    - net.bridge.bridge-nf-call-ip6tables
+    - net.bridge.bridge-nf-call-iptables
+
+- name: Eliminando partición de swap
+  mount:
+    name: "{{ item }}"
+    fstype: swap
+    state: absent
+  with_items:
+    - swap
+    - none
+
+- name: Deshabilitanda swap
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Habilitando firewalld
+  service:
+    name: firewalld
+    enabled: yes
+    state: started
+  when: firewalld_enabled
+
+- name: Añadiendo repositorio de Docker-ce 
+  get_url:
+    dest: /etc/yum.repos.d/docker-ce.repo
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: Instalando docker-ce
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - docker-ce-19.03.14-3.el8
+    - containerd.io
+
+- name: Service Docker
+  systemd:
+    name: docker
+    daemon_reload: yes
+    enabled: yes
+    state: started

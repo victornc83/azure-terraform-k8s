@@ -1,0 +1,16 @@
+---
+# tasks file for kubernetes
+- include_tasks: 01-hardening.yaml
+  args:
+    apply:
+      become: true
+- include_tasks: 02-kubernetes.yaml
+  args:
+    apply:
+      become: true
+- include_tasks: 03-master.yaml
+  when: "'group_master' in group_names"
+- include_tasks: 04-worker.yaml
+  when: "'group_worker' in group_names"
+- include_tasks: 05-helm.yaml
+  when: "'group_master' in group_names and helm_install"

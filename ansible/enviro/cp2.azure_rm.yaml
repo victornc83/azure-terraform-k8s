@@ -1,0 +1,10 @@
+---
+plugin: azure_rm
+auth_source: cli
+include_vms_resource_groups: 
+- kubernetes_rg  
+include_vmss_resource_groups:
+- '*'
+keyed_groups:
+- prefix: group
+  key: tags.group

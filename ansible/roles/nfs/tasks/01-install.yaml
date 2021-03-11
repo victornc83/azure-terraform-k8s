@@ -1,0 +1,15 @@
+---
+- name: Instalación de software
+  yum:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+  - nfs-utils
+  - net-tools
+  - nfs4-acl-tools
+- name: Habilitando servicio rpcbind
+  systemd:
+    name: rpcbind
+    state: started
+    enabled: yes

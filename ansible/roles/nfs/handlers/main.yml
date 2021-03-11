@@ -1,0 +1,10 @@
+---
+# handlers file for nfs
+- name: Reiniciar nfs server
+  systemd: 
+    name: "{{ item }}"
+    state: restarted
+    enabled: yes
+  loop:
+    - rpcbind
+    - nfs-server

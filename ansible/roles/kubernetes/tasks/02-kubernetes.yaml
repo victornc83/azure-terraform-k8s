@@ -1,0 +1,52 @@
+---
+- name: Añadiendo fuente RPM para instalar kubernetes
+  copy:
+    src: kube.repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Obteniendo paquetes de versión a instalar
+  set_fact:
+    packages: "{{ packages | default([]) + [item] }}"
+  loop:
+    - "kubelet{% if k8s_version is defined %}-{{ k8s_version }}{% endif %}"
+    - "kubeadm{% if k8s_version is defined %}-{{ k8s_version }}{% endif %}"
+    - "kubectl{% if k8s_version is defined %}-{{ k8s_version }}{% endif %}"
+
+- name: Instalando paquetes
+  yum:
+    name: "{{ item }}"
+    state: present
+    disable_excludes: kubernetes
+    update_cache: yes
+  loop: "{{ packages }}"
+
+- name: Habilitando kubelet
+  service:
+    name: kubelet
+    state: started
+    enabled: yes
+
+- block:
+  - name: Abriendo puertos en el firewall
+    firewalld:
+      port: "{{ item }}"
+      permanent: yes
+      immediate: yes
+      state: enabled
+    loop: "{{ ports }}"
+  - name: Habilitando transparent masquerading
+    firewalld:
+      masquerade: yes
+      state: enabled
+      permanent: yes
+      immediate: yes
+  when: firewalld_enabled
+  
+- name: Configurando node-ip para Kubelet
+  lineinfile:
+    path: /etc/sysconfig/kubelet
+    line: KUBELET_EXTRA_ARGS=--node-ip={{ ansible_default_ipv4.address }}
+  notify: restart kubelet
