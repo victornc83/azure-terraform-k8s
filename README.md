@@ -1,5 +1,4 @@
-# Caso práctico 2: Despliegue de cluster k8s en Azure
-## Curso experto DevOps & Cloud - UNIR
+# Despliegue de cluster k8s en Azure
 
 ### Estructura del proyecto
 
